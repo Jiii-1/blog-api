@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from '../post.entity';
 import { MetaOption } from 'src/meta-options/meta-option.entity';
+import { TagsService } from 'src/tags/providers/tags.service';
 
 @Injectable()
 export class PostsService {
@@ -17,39 +18,53 @@ export class PostsService {
 
     @InjectRepository(MetaOption)
     private readonly metaOptionRepository: Repository<MetaOption>,
+    private readonly tagsService: TagsService,
   ) {}
 
-  public findAll(userId: string) {
-    const user = this.usersService.findOneById(userId);
+  public async findAll() {
+    const posts = await this.postRepostitory.find({
+      relations: {
+        metaOptions: true,
+        author: true,
+        tags: true,
+      },
+    });
 
-    return [
-      {
-        user: user,
-        title: 'title 1',
-        content: 'content 1',
-      },
-      {
-        user: user,
-        title: 'title 2',
-        content: 'content 2',
-      },
-    ];
+    return posts;
+  }
+
+  public async update(patchPostDto: PatchPostDto) {
+    const tags = await this.tagsService.findMultipleTags(patchPostDto.tags);
+    const post = await this.postRepostitory.findOneBy({
+      id: patchPostDto.id,
+    });
+    post.title = patchPostDto.title ?? post.title;
+    post.content = patchPostDto.content ?? post.content;
+    post.status = patchPostDto.status ?? post.status;
+    post.postType = patchPostDto.postType ?? post.postType;
+    post.slug = patchPostDto.slug ?? post.slug;
+    post.featuredImageUrl =
+      patchPostDto.featuredImageUrl ?? post.featuredImageUrl;
+    post.publishOn = patchPostDto.publishOn ?? post.publishOn;
+    post.tags = tags;
+
+    return await this.postRepostitory.save(post);
+  }
+
+  public async delete(id: number) {
+    await this.postRepostitory.delete(id);
+    return { deleted: true, id };
   }
 
   public async create(@Body() createPostDto: CreatePostDto) {
-    const metaOption = createPostDto.metaOptions
-      ? this.metaOptionRepository.create(createPostDto.metaOptions)
-      : null;
-    if (metaOption) {
-      await this.metaOptionRepository.save(metaOption);
-    }
+    const author = await this.usersService.findOneById(createPostDto.authorId);
+    const tags = await this.tagsService.findMultipleTags(createPostDto.tags);
 
-    const post = this.postRepostitory.create(createPostDto);
-    if (metaOption) {
-      post.metaOptions = metaOption;
-    }
-    console.log(post.publishOn);
-
+    const post = this.postRepostitory.create({
+      ...createPostDto,
+      author: author,
+      tags: tags,
+    });
     return await this.postRepostitory.save(post);
   }
 

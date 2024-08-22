@@ -16,6 +16,7 @@ import {
   ValidateNested,
   MaxLength,
   IsISO8601,
+  IsInt,
 } from 'class-validator';
 
 export class CreatePostDto {
@@ -77,9 +78,8 @@ export class CreatePostDto {
   @ApiPropertyOptional()
   @IsArray()
   @IsOptional()
-  @IsString({ each: true })
-  @MinLength(3, { each: true })
-  tags?: string[];
+  @IsInt({ each: true })
+  tags?: number[];
 
   @ApiPropertyOptional({
     type: 'object',
@@ -98,4 +98,13 @@ export class CreatePostDto {
   @ValidateNested({ each: true })
   @Type(() => CreatePostMetaOptionsDto)
   metaOptions: CreatePostMetaOptionsDto | null;
+
+  @ApiProperty({
+    type: 'integer',
+    required: true,
+    example: 1,
+  })
+  @IsNotEmpty()
+  @IsInt()
+  authorId: number;
 }
