@@ -1,4 +1,9 @@
-import { Body, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Injectable,
+  RequestTimeoutException,
+} from '@nestjs/common';
 import { UsersService } from 'src/users/providers/users.service';
 import { CreatePostDto } from '../dtos/create-post.dto';
 import { PatchPostDto } from '../dtos/patch-post.dto';
@@ -34,10 +39,39 @@ export class PostsService {
   }
 
   public async update(patchPostDto: PatchPostDto) {
-    const tags = await this.tagsService.findMultipleTags(patchPostDto.tags);
-    const post = await this.postRepostitory.findOneBy({
-      id: patchPostDto.id,
-    });
+    let tags = undefined;
+    let post = undefined;
+    try {
+      tags = await this.tagsService.findMultipleTags(patchPostDto.tags);
+    } catch (error) {
+      throw new RequestTimeoutException(
+        'unable to process your request at the moment',
+        {
+          description: 'error connection to database',
+        },
+      );
+    }
+
+    if (!tags || tags.length !== patchPostDto.tags.length) {
+      throw new BadRequestException(
+        'check your tags id and ensure thats is correct',
+      );
+    }
+
+    try {
+      post = await this.postRepostitory.findOneBy({
+        id: patchPostDto.id,
+      });
+    } catch (error) {
+      throw new BadRequestException(
+        'check your tags id and ensure thats is correct',
+      );
+    }
+
+    if (!post) {
+      throw new BadRequestException('the post id does not exist');
+    }
+
     post.title = patchPostDto.title ?? post.title;
     post.content = patchPostDto.content ?? post.content;
     post.status = patchPostDto.status ?? post.status;
@@ -48,7 +82,17 @@ export class PostsService {
     post.publishOn = patchPostDto.publishOn ?? post.publishOn;
     post.tags = tags;
 
-    return await this.postRepostitory.save(post);
+    try {
+      await this.postRepostitory.save(post);
+    } catch (error) {
+      throw new RequestTimeoutException(
+        'unable to process your request at the moment',
+        {
+          description: 'error connection to database',
+        },
+      );
+    }
+    return post;
   }
 
   public async delete(id: number) {

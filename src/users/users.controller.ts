@@ -1,6 +1,5 @@
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CreateUserDTO } from './dtos/create-user.dto';
-import { GetUsersParamDto } from './dtos/get-users-params.dto';
 import { PatchUsersDto } from './dtos/patch-users.dto';
 import { UsersService } from './providers/users.service';
 
@@ -23,7 +22,7 @@ import {
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get('/:id?')
+  @Get()
   @ApiOperation({
     summary: 'Fetches a list of registered users on the app',
   })
@@ -42,11 +41,32 @@ export class UsersController {
     example: 1,
   })
   public getUsers(
-    @Param() getUsersParamDto: GetUsersParamDto,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
   ) {
-    return this.usersService.findAll(getUsersParamDto, limit, page);
+    return this.usersService.findAll(limit, page);
+  }
+
+  @Get('/:id?')
+  @ApiOperation({
+    summary: 'Fetches a list of registered users on the app',
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: 'number',
+    required: false,
+    description: 'The number of entries returned per query',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'page',
+    type: 'number',
+    required: false,
+    description: 'The position of the page number that you want the API',
+    example: 1,
+  })
+  public getUser(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findOneById(id);
   }
 
   @Post()

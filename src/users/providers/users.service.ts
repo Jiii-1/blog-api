@@ -1,9 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { GetUsersParamDto } from '../dtos/get-users-params.dto';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  RequestTimeoutException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user.entity';
 import { CreateUserDTO } from '../dtos/create-user.dto';
+import { ConfigType } from '@nestjs/config';
+import profileConfig from '../config/profile.config';
 
 /**
  * Class to connect to users table and perform business operations
@@ -13,44 +19,71 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    @Inject(profileConfig.KEY)
+    private readonly profileConfiguration: ConfigType<typeof profileConfig>,
   ) {}
 
   public async createUser(createUserDto: CreateUserDTO) {
-    //check is user exist with same email
-    const isExist = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
-    });
-    //handle exception
-    //create a new user
+    let isExist = undefined;
+
+    try {
+      isExist = await this.userRepository.findOne({
+        where: { email: createUserDto.email },
+      });
+    } catch (error) {
+      throw new RequestTimeoutException(
+        'unable to process your request at the moment',
+        {
+          description: 'error connection to database',
+        },
+      );
+    }
+
+    if (isExist) {
+      throw new BadRequestException('user already exist');
+    }
+
     if (!isExist) {
       let newUser = this.userRepository.create(createUserDto);
-      newUser = await this.userRepository.save(newUser);
+      try {
+        newUser = await this.userRepository.save(newUser);
+      } catch (error) {
+        throw new RequestTimeoutException(
+          'unable to process your request at the moment',
+          {
+            description: 'error connection to database',
+          },
+        );
+      }
 
       return newUser;
-    } else {
-      return 'email already taken';
     }
   }
 
-  public findAll(
-    getUsersParamDto: GetUsersParamDto,
-    limit: number,
-    page: number,
-  ) {
-    console.log(getUsersParamDto, limit, page);
-    return [
-      {
-        firstName: 'john',
-        email: 'john@doe.com',
-      },
-      {
-        firstName: 'ghozi',
-        email: 'ghozi@gmail.com',
-      },
-    ];
+  public async findAll(limit: number, page: number) {
+    console.log(limit, page);
+    console.log(this.profileConfiguration);
+    return await this.userRepository.find();
   }
 
   public async findOneById(id: number) {
-    return await this.userRepository.findOneBy({ id });
+    let user = undefined;
+    try {
+      user = await this.userRepository.findOneBy({ id });
+    } catch (error) {
+      throw new RequestTimeoutException(
+        'unable to process your request at the moment',
+        {
+          description: 'error connection to database',
+        },
+      );
+    }
+    if (!user) {
+      throw new BadRequestException('user not found');
+    }
+    if (user) {
+      return user;
+    }
   }
 }
