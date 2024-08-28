@@ -15,7 +15,6 @@ import {
   IsUrl,
   ValidateNested,
   MaxLength,
-  IsISO8601,
   IsInt,
 } from 'class-validator';
 
@@ -71,8 +70,8 @@ export class CreatePostDto {
   featuredImageUrl?: string;
 
   @ApiPropertyOptional()
-  @IsISO8601()
   @IsOptional()
+  @Type(() => Date)
   publishOn?: Date;
 
   @ApiPropertyOptional()
