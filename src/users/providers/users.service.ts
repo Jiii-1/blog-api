@@ -10,6 +10,8 @@ import { User } from '../user.entity';
 import { CreateUserDTO } from '../dtos/create-user.dto';
 import { ConfigType } from '@nestjs/config';
 import profileConfig from '../config/profile.config';
+import { UsersCreateManyProvider } from './users-create-many.provider';
+import { CreateManyUsersDto } from '../dtos/create-many-users.dto';
 
 /**
  * Class to connect to users table and perform business operations
@@ -22,6 +24,8 @@ export class UsersService {
 
     @Inject(profileConfig.KEY)
     private readonly profileConfiguration: ConfigType<typeof profileConfig>,
+
+    private readonly usersCreateManyUsers: UsersCreateManyProvider,
   ) {}
 
   public async createUser(createUserDto: CreateUserDTO) {
@@ -85,5 +89,9 @@ export class UsersService {
     if (user) {
       return user;
     }
+  }
+
+  public async createMany(createManyUsersDto: CreateManyUsersDto) {
+    return await this.usersCreateManyUsers.createMany(createManyUsersDto);
   }
 }
