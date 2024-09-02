@@ -13,6 +13,11 @@ import { PaginationModule } from './common/pagination/pagination.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import envValidation from './config/env.validation';
+import jwtConfig from './auth/config/jwt.config';
+import { JwtModule } from '@nestjs/jwt';
+import { APP_GUARD } from '@nestjs/core';
+import { AccesTokenGuard } from './auth/guard/acces-token/acces-token.guard';
+import { AuthenticationGuard } from './auth/guards/authentication/authentication.guard';
 
 const ENV = process.env.NODE_ENV;
 // User Created Module
@@ -43,11 +48,21 @@ const ENV = process.env.NODE_ENV;
         database: configService.get('database.name'),
       }),
     }),
+    ConfigModule.forFeature(jwtConfig),
+    JwtModule.registerAsync(jwtConfig.asProvider()),
     TagsModule,
     MetaOptionsModule,
     PaginationModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AuthService],
+  providers: [
+    AppService,
+    AuthService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthenticationGuard,
+    },
+    AccesTokenGuard,
+  ],
 })
 export class AppModule {}
