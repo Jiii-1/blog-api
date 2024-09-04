@@ -16,7 +16,7 @@ import envValidation from './config/env.validation';
 import jwtConfig from './auth/config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
-import { AccesTokenGuard } from './auth/guard/acces-token/acces-token.guard';
+import { AccesTokenGuard } from './auth/guards/acces-token/acces-token.guard';
 import { AuthenticationGuard } from './auth/guards/authentication/authentication.guard';
 
 const ENV = process.env.NODE_ENV;
