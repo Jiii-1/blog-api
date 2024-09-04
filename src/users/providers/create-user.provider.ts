@@ -59,7 +59,7 @@ export class CreateUserProvider {
         );
       }
 
-      return newUser.id;
+      return newUser;
     }
   }
 }

@@ -15,6 +15,8 @@ import {
   Body,
   ParseIntPipe,
   DefaultValuePipe,
+  UseInterceptors,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { CreateManyUsersDto } from './dtos/create-many-users.dto';
 import { Auth } from 'src/auth/decorators/auth.decorator';
@@ -74,6 +76,7 @@ export class UsersController {
 
   @Post()
   @Auth(AuthType.None)
+  @UseInterceptors(ClassSerializerInterceptor)
   public createUsers(@Body() createUserDto: CreateUserDTO) {
     return this.usersService.createUser(createUserDto);
   }
